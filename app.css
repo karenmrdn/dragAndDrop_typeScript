@@ -55,6 +55,18 @@ button:active {
   border-color: #a80041;
 }
 
+.appWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app {
+  width: 90%;
+  max-width: 600px;
+  min-width: 350px;
+}
+
 .projects {
   margin: 1rem;
   border: 1px solid #ff0062;
