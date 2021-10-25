@@ -61,7 +61,18 @@ class ProjectState extends State<Project> {
       ProjectStatus.Active
     );
     this.projects.push(newProject);
+    this.updateListeners();
+  }
 
+  moveProject(id: string, newStatus: ProjectStatus) {
+    const foundProject = this.projects.find((project) => project.id === id);
+    if (foundProject && foundProject.status !== newStatus) {
+      foundProject.status = newStatus;
+      this.updateListeners();
+    }
+  }
+
+  private updateListeners() {
     for (const listenerFn of this.listeners) {
       listenerFn(this.projects.slice()); // we pass brand new copy of projects array
     }
@@ -190,7 +201,8 @@ class ProjectItem
 
   @Autobind
   dragStartHandler(event: DragEvent) {
-    console.log(event);
+    event.dataTransfer!.setData("text/plain", this.project.id);
+    event.dataTransfer!.effectAllowed = "move";
   }
 
   dragEndHandler(event: DragEvent) {
@@ -225,16 +237,27 @@ class ProjectList
 
   @Autobind
   dragOverHandler(event: DragEvent) {
-    const listEl = this.element.querySelector("ul")!;
-    listEl.classList.add("droppable");
+    if (event.dataTransfer && event.dataTransfer.types[0] === "text/plain") {
+      event.preventDefault();
+      const listEl = this.element.querySelector("ul")!;
+      listEl.classList.add("droppable");
+    }
   }
 
-  dropHandler(event: DragEvent) {}
+  @Autobind
+  dropHandler(event: DragEvent) {
+    const projectId = event.dataTransfer!.getData("text/plain");
+    projectState.moveProject(
+      projectId,
+      this.type === "active" ? ProjectStatus.Active : ProjectStatus.Finished
+    );
+
+    this.removeDroppableClass();
+  }
 
   @Autobind
   dragLeaveHandler(event: DragEvent) {
-    const listEl = this.element.querySelector("ul")!;
-    listEl.classList.remove("droppable");
+    this.removeDroppableClass();
   }
 
   configure() {
@@ -270,6 +293,11 @@ class ProjectList
     for (const projectItem of this.assignedProjects) {
       new ProjectItem(this.element.querySelector("ul")!.id, projectItem);
     }
+  }
+
+  private removeDroppableClass() {
+    const listEl = this.element.querySelector("ul")!;
+    listEl.classList.remove("droppable");
   }
 }
 
